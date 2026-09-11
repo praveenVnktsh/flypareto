@@ -36,10 +36,17 @@ This first executable release provides:
 - a signed leaky-integrate-and-fire reference simulator that traverses active
   outgoing edges;
 - reusable nondominated sorting and survival-gated Pareto analysis;
+- biological MaleCNS sensory and descending-population resolution;
+- a pinned FlyGym 2.1 bridge with bilateral proprioceptive feedback;
 - a deterministic end-to-end demo and tests.
 
 The embodiment, ecological benchmark suite, accelerator backend, optimizer, and
 male/female comparative analysis are active roadmap items. See [ROADMAP.md](ROADMAP.md).
+
+The verified full-data embodied smoke run advanced 165,122 neural states for 100
+neural steps and FlyGym for 1,000 physics steps. It produced 237,985 total spikes,
+4,746 descending-neuron spikes, finite physical state, and measurable displacement.
+This establishes software integration, not biological calibration.
 
 ## Install
 
@@ -49,6 +56,28 @@ Python 3.10+ is supported.
 uv venv
 uv pip install '.[analysis,dev]'
 ```
+
+For FlyGym 2.1 embodiment:
+
+```bash
+uv pip install '.[analysis,embodiment,dev]'
+uv run flypareto physics-smoke --steps 250
+```
+
+After building the full graph, run the first connectome-to-body integration test:
+
+```bash
+uv run flypareto embodied-smoke data/processed/malecns-v1.0 \
+  --annotations data/raw/body-annotations.feather \
+  --modality olfactory --neural-steps 100
+```
+
+This advances every traced MaleCNS neuron at 1 ms resolution, decodes bilateral
+activity from all annotated descending neurons, and applies it to FlyGym at ten
+physics steps per neural update. Left/right FlyGym joint velocities are returned to
+the MaleCNS proprioceptive populations on every neural step, closing the first
+brain–body loop. The aggregate sensory and descending calibrations are explicitly
+provisional and must not be interpreted as validated fly behavior.
 
 ## Run the verified demo
 

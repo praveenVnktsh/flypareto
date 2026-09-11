@@ -12,6 +12,7 @@ from pyarrow import feather
 from .data import download_default_dataset
 from .demo import run_demo
 from .experiment import run_operating_sweep
+from .flygym_bridge import run_closed_loop_smoke, run_physics_smoke
 from .graph import Connectome, build_connectome
 from .sim import EventDrivenLIF
 
@@ -56,6 +57,26 @@ def _parser() -> argparse.ArgumentParser:
     sweep.add_argument("--steps", type=int, default=100)
     sweep.add_argument("--stimulus-count", type=int, default=100)
     sweep.add_argument("--stimulus-amplitude", type=float, default=1.2)
+
+    physics = commands.add_parser(
+        "physics-smoke", help="run a headless FlyGym 2.1 locomotion smoke test"
+    )
+    physics.add_argument("--steps", type=int, default=250)
+    physics.add_argument("--left-drive", type=float, default=1.0)
+    physics.add_argument("--right-drive", type=float, default=1.0)
+
+    embodied = commands.add_parser(
+        "embodied-smoke", help="couple full MaleCNS activity to FlyGym locomotion"
+    )
+    embodied.add_argument("graph", type=Path)
+    embodied.add_argument("--annotations", type=Path, required=True)
+    embodied.add_argument("--neural-steps", type=int, default=100)
+    embodied.add_argument("--modality", default="olfactory")
+    embodied.add_argument("--left-stimulus", type=float, default=1.0)
+    embodied.add_argument("--right-stimulus", type=float, default=1.0)
+    embodied.add_argument("--stimulus-steps", type=int, default=3)
+    embodied.add_argument("--synaptic-scale", type=float, default=0.008)
+    embodied.add_argument("--proprioceptive-speed-scale", type=float, default=5.0)
     return parser
 
 
@@ -122,6 +143,26 @@ def main() -> None:
         )
         print(json.dumps({"candidates": candidates, "frontier": frontier,
                           "output": str(args.output)}, indent=2))
+    elif args.command == "physics-smoke":
+        result = run_physics_smoke(
+            steps=args.steps,
+            descending_drive=(args.left_drive, args.right_drive),
+        )
+        print(json.dumps(result.to_dict(), indent=2))
+    elif args.command == "embodied-smoke":
+        graph = Connectome.load(args.graph)
+        result = run_closed_loop_smoke(
+            graph,
+            args.annotations,
+            neural_steps=args.neural_steps,
+            modality=args.modality,
+            left_stimulus=args.left_stimulus,
+            right_stimulus=args.right_stimulus,
+            stimulus_steps=args.stimulus_steps,
+            synaptic_scale=args.synaptic_scale,
+            proprioceptive_speed_scale=args.proprioceptive_speed_scale,
+        )
+        print(json.dumps(result.to_dict(), indent=2))
 
 
 if __name__ == "__main__":

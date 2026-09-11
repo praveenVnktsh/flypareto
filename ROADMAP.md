@@ -21,7 +21,11 @@
 
 ## R2 — Embodiment
 
-- [ ] Integrate FlyGym / NeuroMechFly v2
+- [x] Pin and smoke-test the current FlyGym 2.1 / MuJoCo physics stack
+- [x] Resolve bilateral sensory modalities and descending populations from MaleCNS
+- [x] Add a stateful neural-step interface for future closed-loop coupling
+- [x] Close the first MaleCNS–FlyGym loop with bilateral joint-velocity feedback
+- [ ] Replace aggregate descending activity with cell-type-specific motor calibration
 - [ ] Map visual, olfactory, gustatory, and mechanosensory inputs
 - [ ] Map descending and motor populations to action primitives
 - [ ] Establish locomotion, looming escape, and food-search survival floors

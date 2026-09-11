@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-10",
+  "dataset": "male-cns:v1.0",
+  "command": "flypareto embodied-smoke data/processed/malecns-v1.0 --annotations data/raw/body-annotations.feather --modality olfactory --neural-steps 100",
+  "neural_steps": 100,
+  "physics_steps": 1000,
+  "total_spikes": 237985,
+  "descending_spikes": 4746,
+  "mean_drive": [0.9408323764801025, 0.9741994738578796],
+  "drive_range": [0.4000000059604645, 1.0899730920791626],
+  "mean_proprioception": [0.7472754120826721, 0.7427622079849243],
+  "displacement_mm": [0.5025055722319967, 0.35659450559946637, -0.20587260818180286],
+  "finite": true,
+  "interpretation": "Integration smoke test only; sensory and descending calibrations are provisional."
+}
