@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-10",
+  "dataset": "male-cns:v1.0",
+  "assay": "provisional 100 ms locomotion viability",
+  "neural_states_per_trial": 165122,
+  "neural_steps_per_trial": 100,
+  "physics_steps_per_trial": 1000,
+  "grid": {
+    "synaptic_scale": [0.004, 0.008, 0.016],
+    "decoder_half_saturation": [0.005, 0.01, 0.02],
+    "proprioceptive_speed_scale": [5.0],
+    "seeds": [0, 1, 2]
+  },
+  "candidate_points": 9,
+  "trials": 27,
+  "feasible_points": 9,
+  "frontier_points": 9,
+  "observed_ranges": {
+    "mean_forward_displacement_mm": [0.4482763828879784, 0.813812895451462],
+    "mean_lateral_deviation_mm": [0.1534933881997864, 0.22937984806947723],
+    "worst_min_thorax_height_mm": [0.6638563540756084, 0.8183125909182348],
+    "mean_neural_energy_proxy_spikes": [147429.66666666666, 408644.0],
+    "mean_mechanical_effort_proxy": [30.584717276843765, 75.806890019736]
+  },
+  "feasibility_rule": "Every replicate finite, minimum thorax height at least 0.35 mm, and upright fraction at least 0.9.",
+  "interpretation": "All settings are nondominated because displacement, lateral deviation, neural activity, and mechanical effort trade off. This is not an intelligence or evolutionary result; duration and neural-body calibration remain provisional."
+}

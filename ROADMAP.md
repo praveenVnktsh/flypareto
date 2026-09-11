@@ -25,10 +25,11 @@
 - [x] Resolve bilateral sensory modalities and descending populations from MaleCNS
 - [x] Add a stateful neural-step interface for future closed-loop coupling
 - [x] Close the first MaleCNS–FlyGym loop with bilateral joint-velocity feedback
+- [x] Establish a replicated, survival-gated locomotion-viability frontier
 - [ ] Replace aggregate descending activity with cell-type-specific motor calibration
 - [ ] Map visual, olfactory, gustatory, and mechanosensory inputs
 - [ ] Map descending and motor populations to action primitives
-- [ ] Establish locomotion, looming escape, and food-search survival floors
+- [ ] Biologically validate locomotion, looming escape, and food-search survival floors
 - [ ] Compare trajectories and ethograms with measured fly distributions
 
 ## R3 — Latent-capacity frontier

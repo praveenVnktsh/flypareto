@@ -39,6 +39,11 @@ class ClosedLoopSmokeResult:
     drive_range: tuple[float, float]
     mean_proprioception: tuple[float, float]
     displacement_mm: tuple[float, float, float]
+    min_thorax_height_mm: float
+    upright_fraction: float
+    neural_energy_proxy: float
+    mechanical_effort_proxy: float
+    locomotion_viable: bool
     finite: bool
 
     def to_dict(self) -> dict[str, object]:
@@ -48,11 +53,12 @@ class ClosedLoopSmokeResult:
 class _FlyGymPhysics:
     """Small internal wrapper around the version-pinned FlyGym 2.1 API."""
 
-    def __init__(self) -> None:
+    def __init__(self, seed: int = 0) -> None:
         try:
             from flygym import Simulation
             from flygym.anatomy import BodySegment, ContactBodiesPreset
             from flygym.compose import FlatGroundWorld
+            from flygym.compose.fly import ActuatorType
             from flygym.utils.math import Rotation3D
             from flygym_demo.complex_terrain import (
                 HybridControllerObservation,
@@ -81,18 +87,22 @@ class _FlyGymPhysics:
         self.simulation = Simulation(world)
         programmed_steps = PreprogrammedSteps()
         dof_order = self.fly.get_actuated_jointdofs_order("position")
+        all_dof_order = self.fly.get_jointdofs_order()
+        self._position_joint_indices = np.asarray(
+            [all_dof_order.index(joint) for joint in dof_order], dtype=np.intp
+        )
         self._left_joint_indices = np.asarray(
             [
-                i
-                for i, joint in enumerate(dof_order)
+                full_index
+                for full_index, joint in zip(self._position_joint_indices, dof_order)
                 if joint.child.name.rsplit("/", 1)[-1].startswith("l")
             ],
             dtype=np.intp,
         )
         self._right_joint_indices = np.asarray(
             [
-                i
-                for i, joint in enumerate(dof_order)
+                full_index
+                for full_index, joint in zip(self._position_joint_indices, dof_order)
                 if joint.child.name.rsplit("/", 1)[-1].startswith("r")
             ],
             dtype=np.intp,
@@ -105,7 +115,7 @@ class _FlyGymPhysics:
             output_dof_order=dof_order,
         )
         self.simulation.reset()
-        self.controller.reset(seed=0)
+        self.controller.reset(seed=seed)
         initial_action = LocomotionAction(
             joint_angles=programmed_steps.default_pose_by_dof_order(dof_order),
             adhesion_onoff=np.ones(6, dtype=bool),
@@ -113,6 +123,8 @@ class _FlyGymPhysics:
         self._apply_action(self.simulation, self.fly.name, initial_action)
         self.simulation.warmup()
         self._thorax_index = self.fly.get_bodysegs_order().index(BodySegment("c_thorax"))
+        self._position_actuator_type = ActuatorType.POSITION
+        self._reference_thorax_quaternion = self.thorax_quaternion
 
     @property
     def timestep(self) -> float:
@@ -134,11 +146,29 @@ class _FlyGymPhysics:
             dtype=np.float32,
         )
 
-    def step(self, drive: np.ndarray) -> None:
+    @property
+    def thorax_quaternion(self) -> np.ndarray:
+        return self.simulation.get_body_rotations(self.fly.name)[self._thorax_index].astype(float)
+
+    @property
+    def orientation_deviation_radians(self) -> float:
+        quaternion = self.thorax_quaternion
+        similarity = np.clip(abs(np.dot(quaternion, self._reference_thorax_quaternion)), 0, 1)
+        return float(2 * np.arccos(similarity))
+
+    def step(self, drive: np.ndarray) -> float:
         observation = self._observation_type.from_sim(self.simulation, self.fly.name)
         action = self.controller.step(drive, observation)
         self._apply_action(self.simulation, self.fly.name, action)
+        force = self.simulation.get_actuator_forces(
+            self.fly.name, self._position_actuator_type
+        )
+        velocity = self.simulation.get_joint_velocities(self.fly.name)[
+            self._position_joint_indices
+        ]
+        effort = float(np.sum(np.abs(force * velocity)) * self.timestep)
         self.simulation.step()
+        return effort
 
 
 def run_physics_smoke(
@@ -179,6 +209,9 @@ def run_closed_loop_smoke(
     stimulus_steps: int = 3,
     synaptic_scale: float = 0.008,
     proprioceptive_speed_scale: float = 5.0,
+    decoder_half_saturation: float = 0.01,
+    decoder_smoothing: float = 0.9,
+    seed: int = 0,
 ) -> ClosedLoopSmokeResult:
     """Drive FlyGym locomotion from full-MaleCNS descending activity.
 
@@ -189,10 +222,13 @@ def run_closed_loop_smoke(
         raise ValueError("neural_steps must be positive")
     if proprioceptive_speed_scale <= 0:
         raise ValueError("proprioceptive_speed_scale must be positive")
-    physics = _FlyGymPhysics()
+    physics = _FlyGymPhysics(seed=seed)
     populations = MaleCNSPopulations.from_annotations(graph, annotations_path)
     interface = BilateralNeuralInterface(graph, populations)
-    decoder = DescendingDriveDecoder()
+    decoder = DescendingDriveDecoder(
+        half_saturation=decoder_half_saturation,
+        smoothing=decoder_smoothing,
+    )
     neural = EventDrivenLIF(graph, LIFConfig(synaptic_scale=synaptic_scale))
     neural.reset()
     physics_per_neural = max(1, round((neural.config.dt_ms / 1000) / physics.timestep))
@@ -201,6 +237,9 @@ def run_closed_loop_smoke(
     proprioception: list[np.ndarray] = []
     total_spikes = 0
     descending_spikes = 0
+    mechanical_effort = 0.0
+    heights: list[float] = []
+    upright: list[bool] = []
 
     for neural_step in range(neural_steps):
         joint_speed = physics.bilateral_joint_speed
@@ -221,11 +260,21 @@ def run_closed_loop_smoke(
         drive = decoder.update(bilateral)
         drives.append(drive.copy())
         for _ in range(physics_per_neural):
-            physics.step(drive)
+            mechanical_effort += physics.step(drive)
+        heights.append(float(physics.thorax_position[2]))
+        upright.append(physics.orientation_deviation_radians < np.deg2rad(60))
 
     final = physics.thorax_position
     drive_array = np.asarray(drives)
     proprioception_array = np.asarray(proprioception)
+    finite = bool(
+        np.all(np.isfinite(final))
+        and np.all(np.isfinite(drive_array))
+        and np.isfinite(mechanical_effort)
+    )
+    min_height = min(heights)
+    upright_fraction = float(np.mean(upright))
+    locomotion_viable = finite and min_height >= 0.35 and upright_fraction >= 0.9
     return ClosedLoopSmokeResult(
         neural_steps=neural_steps,
         physics_steps=neural_steps * physics_per_neural,
@@ -235,5 +284,10 @@ def run_closed_loop_smoke(
         drive_range=(float(np.min(drive_array)), float(np.max(drive_array))),
         mean_proprioception=tuple(np.mean(proprioception_array, axis=0).tolist()),
         displacement_mm=tuple((final - initial).tolist()),
-        finite=bool(np.all(np.isfinite(final)) and np.all(np.isfinite(drive_array))),
+        min_thorax_height_mm=min_height,
+        upright_fraction=upright_fraction,
+        neural_energy_proxy=float(total_spikes),
+        mechanical_effort_proxy=mechanical_effort,
+        locomotion_viable=locomotion_viable,
+        finite=finite,
     )

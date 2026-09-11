@@ -38,19 +38,20 @@ This first executable release provides:
 - reusable nondominated sorting and survival-gated Pareto analysis;
 - biological MaleCNS sensory and descending-population resolution;
 - a pinned FlyGym 2.1 bridge with bilateral proprioceptive feedback;
+- a replicated, survival-gated locomotion-viability Pareto sweep;
 - a deterministic end-to-end demo and tests.
 
 The embodiment, ecological benchmark suite, accelerator backend, optimizer, and
 male/female comparative analysis are active roadmap items. See [ROADMAP.md](ROADMAP.md).
 
 The verified full-data embodied smoke run advanced 165,122 neural states for 100
-neural steps and FlyGym for 1,000 physics steps. It produced 237,985 total spikes,
-4,746 descending-neuron spikes, finite physical state, and measurable displacement.
+neural steps and FlyGym for 1,000 physics steps. It produced 245,758 total spikes,
+4,104 descending-neuron spikes, finite physical state, and measurable displacement.
 This establishes software integration, not biological calibration.
 
 ## Install
 
-Python 3.10+ is supported.
+Python 3.12–3.14 is supported.
 
 ```bash
 uv venv
@@ -78,6 +79,24 @@ physics steps per neural update. Left/right FlyGym joint velocities are returned
 the MaleCNS proprioceptive populations on every neural step, closing the first
 brain–body loop. The aggregate sensory and descending calibrations are explicitly
 provisional and must not be interpreted as validated fly behavior.
+
+Run the first replicated locomotion-viability frontier:
+
+```bash
+uv run flypareto locomotion-sweep data/processed/malecns-v1.0 \
+  --annotations data/raw/body-annotations.feather \
+  --output results/locomotion-frontier
+```
+
+Each candidate is repeated across three FlyGym controller seeds. A candidate is
+feasible only if every replicate stays finite, maintains at least 0.35 mm thorax
+height, and remains within 60 degrees of its initial orientation for at least 90%
+of sampled steps. Feasible candidates are Pareto-ranked for forward displacement,
+upright time, lateral deviation, neural spikes, and mechanical effort. The first
+verified 3 × 3 sweep found all 9 candidates feasible and nondominated: increased
+propagation bought displacement at an activity and effort cost. Because the assay
+lasts only 100 ms and uses a provisional aggregate descending decoder, this is a
+locomotion-viability frontier—not yet the intelligence–fitness frontier.
 
 ## Run the verified demo
 
