@@ -94,6 +94,19 @@ uv run flypareto simulate data/processed/malecns-v1.0 \
   --steps 100 --stimulus-count 100 --seed 7
 ```
 
+Generate the first full-connectome neural operating frontier:
+
+```bash
+uv run flypareto sweep data/processed/malecns-v1.0 \
+  --annotations data/raw/body-annotations.feather \
+  --output results/operating-frontier
+```
+
+This stimulates actual annotated sensory neurons and measures recruitment of actual
+descending and motor populations across neural operating points. It is a systems
+calibration frontier—not yet an intelligence–fitness result. Intelligence and survival
+labels are reserved for the embodied, behaviorally validated experiments.
+
 The processed graph is a directory of memory-mappable NumPy arrays. In the verified
 v1.0 build, 25,563,197 directed connections link 165,122 officially traced neurons;
 the source table's remaining rows involve orphan, glial, unimportant, untraced, or

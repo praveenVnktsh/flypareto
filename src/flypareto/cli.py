@@ -11,6 +11,7 @@ from pyarrow import feather
 
 from .data import download_default_dataset
 from .demo import run_demo
+from .experiment import run_operating_sweep
 from .graph import Connectome, build_connectome
 from .sim import EventDrivenLIF
 
@@ -42,7 +43,28 @@ def _parser() -> argparse.ArgumentParser:
     demo.add_argument("--output", type=Path, default=Path("results/demo"))
     demo.add_argument("--seed", type=int, default=7)
     demo.add_argument("--candidates", type=int, default=48)
+
+    sweep = commands.add_parser(
+        "sweep", help="run a neural operating-point frontier on the full connectome"
+    )
+    sweep.add_argument("graph", type=Path)
+    sweep.add_argument("--annotations", type=Path, required=True)
+    sweep.add_argument("--output", type=Path, default=Path("results/operating-frontier"))
+    sweep.add_argument("--scales", default="0.002,0.004,0.008,0.016")
+    sweep.add_argument("--thresholds", default="0.8,1.0,1.2")
+    sweep.add_argument("--seeds", default="3,5,7")
+    sweep.add_argument("--steps", type=int, default=100)
+    sweep.add_argument("--stimulus-count", type=int, default=100)
+    sweep.add_argument("--stimulus-amplitude", type=float, default=1.2)
     return parser
+
+
+def _floats(value: str) -> list[float]:
+    return [float(item) for item in value.split(",") if item]
+
+
+def _ints(value: str) -> list[int]:
+    return [int(item) for item in value.split(",") if item]
 
 
 def main() -> None:
@@ -84,6 +106,21 @@ def main() -> None:
     elif args.command == "demo":
         feasible, frontier = run_demo(args.output, args.seed, args.candidates)
         print(json.dumps({"feasible": feasible, "frontier": frontier,
+                          "output": str(args.output)}, indent=2))
+    elif args.command == "sweep":
+        graph = Connectome.load(args.graph)
+        candidates, frontier = run_operating_sweep(
+            graph,
+            args.annotations,
+            args.output,
+            scales=_floats(args.scales),
+            thresholds=_floats(args.thresholds),
+            seeds=_ints(args.seeds),
+            steps=args.steps,
+            stimulus_count=args.stimulus_count,
+            stimulus_amplitude=args.stimulus_amplitude,
+        )
+        print(json.dumps({"candidates": candidates, "frontier": frontier,
                           "output": str(args.output)}, indent=2))
 
 

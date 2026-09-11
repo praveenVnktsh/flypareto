@@ -9,6 +9,7 @@
 - [x] End-to-end synthetic smoke experiment
 - [x] Record release hashes and dataset summary from the full local download
 - [x] Validate a 100-step stimulated full-graph execution
+- [x] Add a replicated full-graph sensory-to-motor operating frontier
 - [ ] Calibrate full-graph spontaneous and stimulated stability biologically
 
 ## R1 — Biological calibration
