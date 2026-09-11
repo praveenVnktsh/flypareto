@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use FlyPareto, cite this software and the MaleCNS dataset paper."
+title: "FlyPareto"
+type: software
+authors:
+  - family-names: "Venkatesh"
+    given-names: "Praveen"
+version: 0.1.0
+date-released: 2026-09-10
+license: MIT
+repository-code: "https://github.com/praveenVnktsh/flypareto"
+preferred-citation:
+  type: article
+  title: "Sexual dimorphism in the complete connectome of the Drosophila male central nervous system"
+  year: 2026
+  doi: "10.1016/j.cell.2026.08.015"
+
