@@ -26,8 +26,10 @@
 - [x] Add a stateful neural-step interface for future closed-loop coupling
 - [x] Close the first MaleCNS–FlyGym loop with bilateral joint-velocity feedback
 - [x] Establish a replicated, survival-gated locomotion-viability frontier
-- [ ] Replace aggregate descending activity with cell-type-specific motor calibration
-- [ ] Map visual, olfactory, gustatory, and mechanosensory inputs
+- [x] Add mirrored odor-source trials, receptor-specific input, and no-odor controls
+- [x] Replace soma-side steering pooling with a DNa01/DNa02 readout
+- [ ] Calibrate additional descending cell types to motor primitives
+- [ ] Extend receptor-specific mapping to visual, gustatory, and mechanosensory inputs
 - [ ] Map descending and motor populations to action primitives
 - [ ] Biologically validate locomotion, looming escape, and food-search survival floors
 - [ ] Compare trajectories and ethograms with measured fly distributions

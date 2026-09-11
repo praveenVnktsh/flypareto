@@ -7,6 +7,7 @@ from flypareto.interface import (
     BilateralNeuralInterface,
     DescendingDriveDecoder,
     MaleCNSPopulations,
+    SteeringDriveDecoder,
 )
 
 
@@ -44,3 +45,9 @@ def test_drive_decoder_is_bounded_and_stateful():
     decoder = DescendingDriveDecoder(smoothing=0.0)
     assert np.isclose(decoder.update(np.array([0.0, 1.0]))[0], 0.4)
     assert np.all(decoder.update(np.array([100.0, 100.0])) < 1.21)
+
+
+def test_steering_decoder_reduces_ipsilateral_drive():
+    decoder = SteeringDriveDecoder(smoothing=0.0)
+    drive = decoder.update(np.array([0.1, 0.1]), np.array([1.0, 0.0]))
+    assert drive[0] < drive[1]

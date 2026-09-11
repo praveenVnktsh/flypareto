@@ -122,7 +122,15 @@ class _FlyGymPhysics:
         )
         self._apply_action(self.simulation, self.fly.name, initial_action)
         self.simulation.warmup()
-        self._thorax_index = self.fly.get_bodysegs_order().index(BodySegment("c_thorax"))
+        body_order = self.fly.get_bodysegs_order()
+        self._thorax_index = body_order.index(BodySegment("c_thorax"))
+        self._antenna_indices = np.asarray(
+            [
+                body_order.index(BodySegment("l_funiculus")),
+                body_order.index(BodySegment("r_funiculus")),
+            ],
+            dtype=np.intp,
+        )
         self._position_actuator_type = ActuatorType.POSITION
         self._reference_thorax_quaternion = self.thorax_quaternion
 
@@ -133,6 +141,11 @@ class _FlyGymPhysics:
     @property
     def thorax_position(self) -> np.ndarray:
         return self.simulation.get_body_positions(self.fly.name)[self._thorax_index].astype(float)
+
+    @property
+    def antenna_positions(self) -> np.ndarray:
+        """World positions of the left and right funiculi in millimeters."""
+        return self.simulation.get_body_positions(self.fly.name)[self._antenna_indices].astype(float)
 
     @property
     def bilateral_joint_speed(self) -> np.ndarray:

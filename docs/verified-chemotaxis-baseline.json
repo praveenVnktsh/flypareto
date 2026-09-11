@@ -1,0 +1,41 @@
+{
+  "date": "2026-09-11",
+  "dataset": "male-cns:v1.0",
+  "assay": "mirrored receptor-specific chemotaxis with no-odor control",
+  "neural_states_per_trial": 165122,
+  "neural_steps_per_trial": 500,
+  "physics_steps_per_trial": 5000,
+  "fixed_parameters": {
+    "synaptic_scale": 0.008,
+    "decoder_half_saturation": 0.01,
+    "decoder_mode": "steering",
+    "odor_channels": ["ORN_DM1", "ORN_VA2"],
+    "target_forward_mm": 2.0,
+    "target_laterals_mm": [-0.75, 0.75],
+    "source_radius_mm": 0.5,
+    "seeds": [0, 1]
+  },
+  "feasibility_rule": "Every replicate locomotion-viable and source reach fraction at least 0.5.",
+  "conditions": [
+    {
+      "odor_gain": 0.0,
+      "source_reach_fraction": 0.25,
+      "locomotion_viable_fraction": 1.0,
+      "mean_progress_fraction": 0.6707105295506897,
+      "mean_neural_energy_proxy_spikes": 920980.5,
+      "mean_mechanical_effort_proxy": 627.3329178845956,
+      "feasible": false
+    },
+    {
+      "odor_gain": 2.0,
+      "source_reach_fraction": 0.25,
+      "locomotion_viable_fraction": 1.0,
+      "mean_progress_fraction": 0.687996399557812,
+      "mean_neural_energy_proxy_spikes": 1410305.5,
+      "mean_mechanical_effort_proxy": 701.781879806455,
+      "feasible": false
+    }
+  ],
+  "frontier_points": 0,
+  "interpretation": "Odor did not improve source-reaching success over control and failed the behavioral floor. Current homogeneous LIF dynamics and steering readout do not establish robust chemotaxis."
+}

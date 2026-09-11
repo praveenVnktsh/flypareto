@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 from pyarrow import feather
 
+from .chemotaxis import run_chemotaxis_sweep, run_chemotaxis_trial
 from .data import download_default_dataset
 from .demo import run_demo
 from .experiment import run_operating_sweep
@@ -96,6 +97,48 @@ def _parser() -> argparse.ArgumentParser:
     locomotion.add_argument("--neural-steps", type=int, default=100)
     locomotion.add_argument("--modality", default="olfactory")
     locomotion.add_argument("--stimulus-steps", type=int, default=3)
+
+    chemotaxis = commands.add_parser(
+        "chemotaxis", help="run closed-loop whole-connectome odor-source localization"
+    )
+    chemotaxis.add_argument("graph", type=Path)
+    chemotaxis.add_argument("--annotations", type=Path, required=True)
+    chemotaxis.add_argument("--neural-steps", type=int, default=500)
+    chemotaxis.add_argument("--target-forward", type=float, default=2.0)
+    chemotaxis.add_argument("--target-lateral", type=float, default=0.75)
+    chemotaxis.add_argument("--source-radius", type=float, default=0.5)
+    chemotaxis.add_argument("--odor-sigma", type=float, default=1.5)
+    chemotaxis.add_argument("--odor-gain", type=float, default=2.0)
+    chemotaxis.add_argument("--odor-channels", default="ORN_DM1,ORN_VA2")
+    chemotaxis.add_argument("--synaptic-scale", type=float, default=0.008)
+    chemotaxis.add_argument("--proprioceptive-speed-scale", type=float, default=5.0)
+    chemotaxis.add_argument("--decoder-half-saturation", type=float, default=0.01)
+    chemotaxis.add_argument("--decoder-smoothing", type=float, default=0.9)
+    chemotaxis.add_argument("--decoder-mode", choices=("aggregate", "steering"), default="steering")
+    chemotaxis.add_argument("--seed", type=int, default=0)
+
+    chemotaxis_sweep = commands.add_parser(
+        "chemotaxis-sweep", help="run a mirrored, replicated odor-source frontier"
+    )
+    chemotaxis_sweep.add_argument("graph", type=Path)
+    chemotaxis_sweep.add_argument("--annotations", type=Path, required=True)
+    chemotaxis_sweep.add_argument(
+        "--output", type=Path, default=Path("results/chemotaxis-frontier")
+    )
+    chemotaxis_sweep.add_argument("--synaptic-scales", default="0.004,0.008")
+    chemotaxis_sweep.add_argument("--decoder-half-saturations", default="0.01,0.02")
+    chemotaxis_sweep.add_argument("--odor-gains", default="0.0,2.0")
+    chemotaxis_sweep.add_argument("--odor-channels", default="ORN_DM1,ORN_VA2")
+    chemotaxis_sweep.add_argument("--seeds", default="0,1")
+    chemotaxis_sweep.add_argument("--target-laterals", default="-0.75,0.75")
+    chemotaxis_sweep.add_argument("--neural-steps", type=int, default=500)
+    chemotaxis_sweep.add_argument("--target-forward", type=float, default=2.0)
+    chemotaxis_sweep.add_argument("--source-radius", type=float, default=0.5)
+    chemotaxis_sweep.add_argument("--odor-sigma", type=float, default=1.5)
+    chemotaxis_sweep.add_argument("--minimum-reach-fraction", type=float, default=0.5)
+    chemotaxis_sweep.add_argument(
+        "--decoder-mode", choices=("aggregate", "steering"), default="steering"
+    )
     return parser
 
 
@@ -182,6 +225,7 @@ def main() -> None:
             proprioceptive_speed_scale=args.proprioceptive_speed_scale,
             decoder_half_saturation=args.decoder_half_saturation,
             decoder_smoothing=args.decoder_smoothing,
+            decoder_mode=args.decoder_mode,
             seed=args.seed,
         )
         print(json.dumps(result.to_dict(), indent=2))
@@ -198,6 +242,45 @@ def main() -> None:
             neural_steps=args.neural_steps,
             modality=args.modality,
             stimulus_steps=args.stimulus_steps,
+        )
+        print(json.dumps({"candidates": candidates, "frontier": frontier,
+                          "output": str(args.output)}, indent=2))
+    elif args.command == "chemotaxis":
+        graph = Connectome.load(args.graph)
+        result = run_chemotaxis_trial(
+            graph,
+            args.annotations,
+            neural_steps=args.neural_steps,
+            target_offset_mm=(args.target_forward, args.target_lateral),
+            source_radius_mm=args.source_radius,
+            odor_sigma_mm=args.odor_sigma,
+            odor_gain=args.odor_gain,
+            odor_channels=tuple(item for item in args.odor_channels.split(",") if item),
+            synaptic_scale=args.synaptic_scale,
+            proprioceptive_speed_scale=args.proprioceptive_speed_scale,
+            decoder_half_saturation=args.decoder_half_saturation,
+            decoder_smoothing=args.decoder_smoothing,
+            seed=args.seed,
+        )
+        print(json.dumps(result.to_dict(), indent=2))
+    elif args.command == "chemotaxis-sweep":
+        graph = Connectome.load(args.graph)
+        candidates, frontier = run_chemotaxis_sweep(
+            graph,
+            args.annotations,
+            args.output,
+            synaptic_scales=_floats(args.synaptic_scales),
+            decoder_half_saturations=_floats(args.decoder_half_saturations),
+            odor_gains=_floats(args.odor_gains),
+            seeds=_ints(args.seeds),
+            target_laterals_mm=_floats(args.target_laterals),
+            neural_steps=args.neural_steps,
+            target_forward_mm=args.target_forward,
+            source_radius_mm=args.source_radius,
+            odor_sigma_mm=args.odor_sigma,
+            odor_channels=tuple(item for item in args.odor_channels.split(",") if item),
+            minimum_reach_fraction=args.minimum_reach_fraction,
+            decoder_mode=args.decoder_mode,
         )
         print(json.dumps({"candidates": candidates, "frontier": frontier,
                           "output": str(args.output)}, indent=2))

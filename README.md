@@ -39,6 +39,7 @@ This first executable release provides:
 - biological MaleCNS sensory and descending-population resolution;
 - a pinned FlyGym 2.1 bridge with bilateral proprioceptive feedback;
 - a replicated, survival-gated locomotion-viability Pareto sweep;
+- a mirrored, receptor-specific chemotaxis assay with no-odor controls;
 - a deterministic end-to-end demo and tests.
 
 The embodiment, ecological benchmark suite, accelerator backend, optimizer, and
@@ -97,6 +98,25 @@ verified 3 × 3 sweep found all 9 candidates feasible and nondominated: increase
 propagation bought displacement at an activity and effort cost. Because the assay
 lasts only 100 ms and uses a provisional aggregate descending decoder, this is a
 locomotion-viability frontier—not yet the intelligence–fitness frontier.
+
+The next assay tests odor-source localization with the odor field sampled at the
+left and right funiculi. It stimulates only MaleCNS `ORN_DM1` and `ORN_VA2`
+channels, which are implicated in innate vinegar attraction, and uses the
+experimentally characterized DNa01/DNa02 steering pairs for turning readout:
+
+```bash
+uv run flypareto chemotaxis-sweep data/processed/malecns-v1.0 \
+  --annotations data/raw/body-annotations.feather \
+  --output results/chemotaxis-frontier
+```
+
+The first matched experiment used mirrored targets, two controller seeds, and a
+no-odor control. Both odor and control conditions reached only one of four sources,
+below the 50% feasibility floor. Odor modestly increased mean closest approach but
+increased neural activity by 53% and mechanical effort by 12%. This is a useful
+negative baseline: the homogeneous LIF model plus current readout does not yet
+support robust chemotaxis, and a lucky trajectory toward one side is explicitly
+rejected as locomotor handedness rather than intelligence.
 
 ## Run the verified demo
 
@@ -183,6 +203,9 @@ redistribute the dataset. Download locations and provenance are recorded in
 - [MaleCNS project](https://male-cns.janelia.org/)
 - [MaleCNS dataset documentation](https://www.janelia.org/project-team/flyem/male-cns-connectome)
 - Paper: *Sexual dimorphism in the complete connectome of the Drosophila male central nervous system*, Cell (2026), DOI `10.1016/j.cell.2026.08.015`.
+- Steering calibration: [Rayshubskiy et al., eLife](https://doi.org/10.7554/eLife.102230)
+  and [Braun et al., Cell](https://doi.org/10.1016/j.cell.2024.08.033).
+- Attractive olfactory channels: [Semmelhack and Wang, Nature](https://doi.org/10.1038/nature07983).
 
 ## License
 
