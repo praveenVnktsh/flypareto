@@ -47,6 +47,7 @@ def test_chemotaxis_sweep_applies_behavioral_feasibility_floor(tmp_path):
         tmp_path / "unused.feather",
         tmp_path / "results",
         synaptic_scales=[0.008],
+        thresholds=[1.0],
         decoder_half_saturations=[0.01],
         odor_gains=[0.0, 2.0],
         seeds=[0, 1],

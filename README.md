@@ -118,6 +118,25 @@ negative baseline: the homogeneous LIF model plus current readout does not yet
 support robust chemotaxis, and a lucky trajectory toward one side is explicitly
 rejected as locomotor handedness rather than intelligence.
 
+Calibrate the intervening circuit before rerunning embodiment:
+
+```bash
+uv run flypareto calibrate-steering data/processed/malecns-v1.0 \
+  --annotations data/raw/body-annotations.feather \
+  --output results/steering-calibration
+uv run flypareto plot-calibration \
+  results/steering-calibration/calibration-points.csv \
+  --output results/steering-calibration/frontier.png
+```
+
+This performs unilateral DM1 and VA2 interventions and retains separate DNa01,
+DNa02, and DNg13 measurements. The verified 12-point sweep found 9 responding,
+stable points and 8 nondominated points. Peak ipsilateral selectivity was 0.472 at
+synaptic scale 0.008 and threshold 0.8. That point still failed the continuous-odor
+embodied retest: pulse selectivity did not persist under closed-loop stimulation.
+The full 144-row intervention matrix and figure are checked into
+`docs/verified-steering-calibration/`.
+
 ## Run the verified demo
 
 ```bash

@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 from pyarrow import feather
 
+from .calibration import plot_calibration_frontier, run_intervention_calibration
 from .chemotaxis import run_chemotaxis_sweep, run_chemotaxis_trial
 from .data import download_default_dataset
 from .demo import run_demo
@@ -111,6 +112,7 @@ def _parser() -> argparse.ArgumentParser:
     chemotaxis.add_argument("--odor-gain", type=float, default=2.0)
     chemotaxis.add_argument("--odor-channels", default="ORN_DM1,ORN_VA2")
     chemotaxis.add_argument("--synaptic-scale", type=float, default=0.008)
+    chemotaxis.add_argument("--neural-threshold", type=float, default=1.0)
     chemotaxis.add_argument("--proprioceptive-speed-scale", type=float, default=5.0)
     chemotaxis.add_argument("--decoder-half-saturation", type=float, default=0.01)
     chemotaxis.add_argument("--decoder-smoothing", type=float, default=0.9)
@@ -126,6 +128,7 @@ def _parser() -> argparse.ArgumentParser:
         "--output", type=Path, default=Path("results/chemotaxis-frontier")
     )
     chemotaxis_sweep.add_argument("--synaptic-scales", default="0.004,0.008")
+    chemotaxis_sweep.add_argument("--thresholds", default="0.8,1.0")
     chemotaxis_sweep.add_argument("--decoder-half-saturations", default="0.01,0.02")
     chemotaxis_sweep.add_argument("--odor-gains", default="0.0,2.0")
     chemotaxis_sweep.add_argument("--odor-channels", default="ORN_DM1,ORN_VA2")
@@ -139,6 +142,30 @@ def _parser() -> argparse.ArgumentParser:
     chemotaxis_sweep.add_argument(
         "--decoder-mode", choices=("aggregate", "steering"), default="steering"
     )
+
+    calibration = commands.add_parser(
+        "calibrate-steering", help="build a receptor-to-steering intervention frontier"
+    )
+    calibration.add_argument("graph", type=Path)
+    calibration.add_argument("--annotations", type=Path, required=True)
+    calibration.add_argument(
+        "--output", type=Path, default=Path("results/steering-calibration")
+    )
+    calibration.add_argument("--synaptic-scales", default="0.002,0.004,0.008,0.016")
+    calibration.add_argument("--thresholds", default="0.8,1.0,1.2")
+    calibration.add_argument("--odor-channels", default="ORN_DM1,ORN_VA2")
+    calibration.add_argument("--dn-types", default="DNa01,DNa02,DNg13")
+    calibration.add_argument("--steps", type=int, default=100)
+    calibration.add_argument("--stimulus-steps", type=int, default=10)
+    calibration.add_argument("--stimulus-amplitude", type=float, default=1.2)
+    calibration.add_argument("--maximum-peak-fraction", type=float, default=0.25)
+    calibration.add_argument("--maximum-late-fraction", type=float, default=0.75)
+
+    calibration_plot = commands.add_parser(
+        "plot-calibration", help="plot a calibration-points CSV"
+    )
+    calibration_plot.add_argument("points", type=Path)
+    calibration_plot.add_argument("--output", type=Path, required=True)
     return parser
 
 
@@ -225,7 +252,6 @@ def main() -> None:
             proprioceptive_speed_scale=args.proprioceptive_speed_scale,
             decoder_half_saturation=args.decoder_half_saturation,
             decoder_smoothing=args.decoder_smoothing,
-            decoder_mode=args.decoder_mode,
             seed=args.seed,
         )
         print(json.dumps(result.to_dict(), indent=2))
@@ -257,9 +283,11 @@ def main() -> None:
             odor_gain=args.odor_gain,
             odor_channels=tuple(item for item in args.odor_channels.split(",") if item),
             synaptic_scale=args.synaptic_scale,
+            neural_threshold=args.neural_threshold,
             proprioceptive_speed_scale=args.proprioceptive_speed_scale,
             decoder_half_saturation=args.decoder_half_saturation,
             decoder_smoothing=args.decoder_smoothing,
+            decoder_mode=args.decoder_mode,
             seed=args.seed,
         )
         print(json.dumps(result.to_dict(), indent=2))
@@ -270,6 +298,7 @@ def main() -> None:
             args.annotations,
             args.output,
             synaptic_scales=_floats(args.synaptic_scales),
+            thresholds=_floats(args.thresholds),
             decoder_half_saturations=_floats(args.decoder_half_saturations),
             odor_gains=_floats(args.odor_gains),
             seeds=_ints(args.seeds),
@@ -284,6 +313,27 @@ def main() -> None:
         )
         print(json.dumps({"candidates": candidates, "frontier": frontier,
                           "output": str(args.output)}, indent=2))
+    elif args.command == "calibrate-steering":
+        graph = Connectome.load(args.graph)
+        candidates, frontier = run_intervention_calibration(
+            graph,
+            args.annotations,
+            args.output,
+            synaptic_scales=_floats(args.synaptic_scales),
+            thresholds=_floats(args.thresholds),
+            odor_channels=tuple(item for item in args.odor_channels.split(",") if item),
+            dn_types=tuple(item for item in args.dn_types.split(",") if item),
+            steps=args.steps,
+            stimulus_steps=args.stimulus_steps,
+            stimulus_amplitude=args.stimulus_amplitude,
+            maximum_peak_fraction=args.maximum_peak_fraction,
+            maximum_late_fraction=args.maximum_late_fraction,
+        )
+        print(json.dumps({"candidates": candidates, "frontier": frontier,
+                          "output": str(args.output)}, indent=2))
+    elif args.command == "plot-calibration":
+        plot_calibration_frontier(args.points, args.output)
+        print(json.dumps({"output": str(args.output)}, indent=2))
 
 
 if __name__ == "__main__":

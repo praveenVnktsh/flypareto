@@ -10,6 +10,7 @@
 - [x] Record release hashes and dataset summary from the full local download
 - [x] Validate a 100-step stimulated full-graph execution
 - [x] Add a replicated full-graph sensory-to-motor operating frontier
+- [x] Add receptor-to-steering intervention matrices and a calibration frontier
 - [ ] Calibrate full-graph spontaneous and stimulated stability biologically
 
 ## R1 — Biological calibration

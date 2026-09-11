@@ -72,6 +72,7 @@ def run_chemotaxis_trial(
     odor_gain: float = 2.0,
     odor_channels: tuple[str, ...] = ("ORN_DM1", "ORN_VA2"),
     synaptic_scale: float = 0.008,
+    neural_threshold: float = 1.0,
     proprioceptive_speed_scale: float = 5.0,
     decoder_half_saturation: float = 0.01,
     decoder_smoothing: float = 0.9,
@@ -90,6 +91,8 @@ def run_chemotaxis_trial(
         raise ValueError("source radius and odor sigma must be positive; odor gain cannot be negative")
     if proprioceptive_speed_scale <= 0:
         raise ValueError("proprioceptive_speed_scale must be positive")
+    if neural_threshold <= 0:
+        raise ValueError("neural_threshold must be positive")
     if not odor_channels:
         raise ValueError("at least one odor channel is required")
 
@@ -115,7 +118,10 @@ def run_chemotaxis_trial(
             raise ValueError("annotations do not resolve DNa01/DNa02 steering neurons")
     else:
         raise ValueError("decoder_mode must be 'aggregate' or 'steering'")
-    neural = EventDrivenLIF(graph, LIFConfig(synaptic_scale=synaptic_scale))
+    neural = EventDrivenLIF(
+        graph,
+        LIFConfig(synaptic_scale=synaptic_scale, threshold=neural_threshold),
+    )
     neural.reset()
     physics_per_neural = max(1, round((neural.config.dt_ms / 1000) / physics.timestep))
     initial_position = physics.thorax_position
@@ -214,6 +220,7 @@ def run_chemotaxis_sweep(
     annotations_path: Path,
     output: Path,
     synaptic_scales: list[float],
+    thresholds: list[float],
     decoder_half_saturations: list[float],
     odor_gains: list[float],
     seeds: list[int],
@@ -230,6 +237,7 @@ def run_chemotaxis_sweep(
     """Pareto-rank ecological candidates across mirrored sources and seeds."""
     grids = (
         synaptic_scales,
+        thresholds,
         decoder_half_saturations,
         odor_gains,
         seeds,
@@ -242,7 +250,7 @@ def run_chemotaxis_sweep(
     execute = run_chemotaxis_trial if runner is None else runner
     rows: list[dict[str, float | bool]] = []
 
-    for synaptic_scale, half_saturation, odor_gain in itertools.product(*grids[:3]):
+    for synaptic_scale, threshold, half_saturation, odor_gain in itertools.product(*grids[:4]):
         trials = [
             execute(
                 graph,
@@ -254,6 +262,7 @@ def run_chemotaxis_sweep(
                 odor_gain=odor_gain,
                 odor_channels=odor_channels,
                 synaptic_scale=synaptic_scale,
+                neural_threshold=threshold,
                 decoder_half_saturation=half_saturation,
                 decoder_mode=decoder_mode,
                 seed=seed,
@@ -264,6 +273,7 @@ def run_chemotaxis_sweep(
         progress_fractions = [trial.progress_mm / trial.initial_distance_mm for trial in trials]
         row: dict[str, float | bool] = {
             "synaptic_scale": synaptic_scale,
+            "threshold": threshold,
             "decoder_half_saturation": half_saturation,
             "odor_gain": odor_gain,
             "replicates": float(len(trials)),

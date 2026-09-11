@@ -1,0 +1,35 @@
+{
+  "date": "2026-09-11",
+  "dataset": "male-cns:v1.0",
+  "assay": "unilateral receptor-to-steering pulse interventions",
+  "neural_states_per_intervention": 165122,
+  "steps": 100,
+  "stimulus_steps": 10,
+  "odor_channels": ["ORN_DM1", "ORN_VA2"],
+  "dn_types": ["DNa01", "DNa02", "DNg13"],
+  "grid": {
+    "synaptic_scale": [0.002, 0.004, 0.008, 0.016],
+    "threshold": [0.8, 1.0, 1.2]
+  },
+  "candidate_points": 12,
+  "interventions": 48,
+  "matrix_rows": 144,
+  "feasible_points": 9,
+  "frontier_points": 8,
+  "feasibility_rule": "Nonzero requested-DN response, peak population fraction at most 0.25, and late-spike fraction at most 0.75.",
+  "maximum_selectivity_point": {
+    "synaptic_scale": 0.008,
+    "threshold": 0.8,
+    "mean_lateral_selectivity": 0.47222222222222227,
+    "mean_dn_response_rate": 0.015,
+    "mean_total_spikes": 131338.25,
+    "max_peak_fraction": 0.015237218541442086,
+    "mean_late_fraction": 0.5503403636947988
+  },
+  "embodied_retest": {
+    "target_lateral_mm": -0.75,
+    "source_reached": false,
+    "mean_descending_asymmetry": 0.0,
+    "interpretation": "Pulse selectivity did not persist during continuous closed-loop odor stimulation."
+  }
+}
